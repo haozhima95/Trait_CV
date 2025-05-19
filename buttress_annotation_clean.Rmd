@@ -1,0 +1,235 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-05-15"
+---
+
+```{r}
+library(jsonlite)
+library(dplyr)
+library(tibble)
+
+
+library(tidyr)
+
+library(ggplot2)
+
+library(readr)
+
+library(stringr)
+```
+
+
+```{r}
+df1 <- read.csv('C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_1_csv.csv')
+
+
+```
+
+
+```{r}
+
+# 2. Parse the JSON (dictionary) strings in 'file_attributes' column
+parsed_attrs <- lapply(df1$file_attributes, jsonlite::fromJSON)
+
+# 3. Combine the parsed attribute lists into a data frame
+#    bind_rows will fill in NA for any missing keys
+attrs_df <- bind_rows(parsed_attrs)
+
+# 4. Combine the original data frame with the new attribute columns
+df_expanded <- bind_cols(df1, attrs_df)
+
+# 5. Display the first few rows to verify
+head(df_expanded)
+```
+
+
+
+```{r}
+
+df_expanded %>%
+  group_by(Buttress)%>%
+  summarise(count = n())%>%
+  ungroup()
+
+```
+
+
+```{r}
+
+dfclass <- df_expanded %>%
+  mutate(buttress_valid = case_when(Buttress %in% c(1,2) ~1, # have buttress doesn't matter whether it is adult or not. 
+                                    Buttress %in% c(0) & `life state`>1 ~ 2, # no buttress but adult. 
+                                    .default = 3)) # Others...
+
+```
+
+
+```{r}
+
+dfclass %>%
+  group_by(buttress_valid)%>%
+  summarise(count = n())%>%
+  ungroup()
+
+```
+
+
+```{r}
+
+dfclass <- dfclass %>%
+  select(c(
+    filename,
+    buttress_valid
+  ))
+
+
+```
+
+```{r}
+
+write_csv(dfclass, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_training_1.csv')
+
+```
+
+
+
+```{r}
+
+dfslim <- df_expanded %>%
+  #filter(Buttress %in% c(0,1))%>%
+  filter(`life state`>0)
+
+
+```
+
+
+```{r}
+
+dfadult <- dfslim %>%
+  filter(`life state`>1)
+
+
+```
+
+
+
+```{r}
+
+write_csv(dfadult, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_cleaned_1.csv')
+
+```
+
+
+
+```{r}
+
+library(jsonlite)
+library(dplyr)
+
+
+
+
+```
+
+
+```{r}
+
+# Read the CSV file; ensure strings are not converted to factors
+df <- read.csv("C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_2_csv.csv", stringsAsFactors = FALSE)
+
+
+df <- df %>%
+  filter(!file_attributes == '{}')
+
+```
+
+
+```{r}
+# Step 2: Parse JSON in 'file_attributes' for each row
+# Use tryCatch to handle empty/malformed JSON by returning an empty list
+json_list <- lapply(df$file_attributes, function(x) {
+  parsed <- tryCatch(fromJSON(x), error = function(e) list())
+  # If parsing yields an empty or zero-length result, return empty list for NA columns
+  if (is.null(parsed) || length(parsed) == 0) return(list())
+  return(parsed)
+})
+
+# Step 3: Combine all parsed lists into a data frame (one row per list)
+# bind_rows aligns names across lists and fills missing with NA:contentReference[oaicite:3]{index=3}
+attributes_df <- bind_rows(json_list)
+
+# If no JSON keys were found, attributes_df may have no columns; ensure consistent structure
+if (ncol(attributes_df) == 0) {
+  attributes_df <- tibble()  # creates an empty tibble with 0 columns
+}
+
+# Step 4: Combine the new JSON columns with the original data
+# This keeps all original columns (including 'file_attributes') and adds parsed keys
+df_expanded <- bind_cols(df, attributes_df)
+```
+
+
+```{r}
+
+dfslim <- df_expanded %>%
+  filter(Buttress %in% c(0,1))%>%
+  filter(`life state` > 1)
+
+```
+
+
+```{r}
+
+df_expanded %>%
+  group_by(Buttress)%>%
+  summarise(count = n())%>%
+  ungroup()
+
+```
+
+
+
+```{r}
+
+dfclass <- df_expanded %>%
+  mutate(buttress_valid = case_when(
+    Buttress == 1 ~ 1,# Buttress regardless adult or not. 
+    Buttress == 0 & `life state` > 1 ~ 2, # Adult and no buttress
+    .default = 3 # Others
+  ))
+
+```
+
+
+
+```{r}
+
+dfclass %>%
+  group_by(buttress_valid)%>%
+  summarise(count = n())%>%
+  ungroup()
+
+```
+
+
+
+```{r}
+write_csv(dfclass, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_cleaned_2.csv')
+
+```
+
+
+
+
+```{r}
+
+write_csv(dfslim, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_cleaned_2.csv')
+
+```
+
+
+```{r}
+```
+
+
