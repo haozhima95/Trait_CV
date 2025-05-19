@@ -212,10 +212,19 @@ dfclass %>%
 
 ```
 
+```{r}
 
+dfclass <- dfclass %>%
+  select(c(
+    filename,
+    buttress_valid
+  ))
+
+
+```
 
 ```{r}
-write_csv(dfclass, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_cleaned_2.csv')
+write_csv(dfclass, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_training_2.csv')
 
 ```
 

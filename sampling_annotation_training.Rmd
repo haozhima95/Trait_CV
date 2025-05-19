@@ -1,0 +1,223 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-05-15"
+---
+
+
+
+```{r}
+
+library(readr)
+
+library(dplyr)
+
+library(ggplot2)
+
+
+```
+
+
+```{r}
+
+df1 <- read.csv('C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_training_1.csv')
+
+df2 <- read.csv('C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_annotation_training_2.csv')
+
+```
+
+
+
+
+```{r}
+
+dfboth <- bind_rows(df1, df2)
+
+
+```
+
+
+```{r}
+
+dfboth <- dfboth %>%
+  mutate(name = sub("(^[^-]+)\\..*", "\\1", filename))
+
+dfboth$name <- as.numeric(dfboth$name)
+
+```
+
+
+```{r}
+
+dfboth %>%
+  group_by(buttress_valid)%>%
+  summarise(count = n())%>%
+  ungroup()
+
+```
+
+
+
+
+```{r}
+
+inatdf <- read.csv('C:\\Users\\haozh\\Desktop\\buttress_root\\butress_plants_iNaturalist_url_combine.csv')
+
+```
+
+
+
+```{r}
+
+
+dfboth <- dfboth %>%
+  left_join(inatdf, by = c('name' = 'X'))
+
+```
+
+
+
+```{r}
+
+dfboth <- dfboth %>%
+  group_by(buttress_valid)%>%
+  mutate(weight = 1/n())%>%
+  ungroup()
+
+```
+
+
+```{r}
+
+dfsample <- dfboth %>%
+  #group_by(buttress_valid) %>%
+  sample_n(size = 3000, weight = weight)
+  #ungroup()
+
+```
+
+
+```{r}
+
+dfsample %>%
+  group_by(buttress_valid)%>%
+  summarise(count = n())
+
+```
+
+
+
+```{r}
+
+subinat <- inatdf %>%
+  filter(Buttress %in% c(0,1))
+
+```
+
+
+
+```{r}
+
+subinat <- subinat %>%
+  group_by(occurrenceID)%>%
+  slice(1)
+
+
+```
+
+
+```{r}
+library(maps)
+library(tidyverse)
+worlddata <- map_data('world') 
+  ggplot() + 
+  geom_map(data = worlddata[worlddata$lat<40 & worlddata$lat>=-35,], map = worlddata, aes(x = long, y = lat, group = group, map_id = region), fill = '#8d99ae', color = '#8d99ae', size = 0.5)+
+    #coord_sf(crs = 8857, default_crs = 4326)+
+  geom_point(data = subinat, aes(x = decimalLongitude, y = decimalLatitude, color = as.factor(Buttress)), size = 1)+
+  labs(x = 'Longitude', y = 'Latitude')+
+  theme_classic()+
+  scale_color_viridis_d(direction = -1)+
+  #scale_color_manual(values = c('#3a8c2d'))+
+  theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(),legend.position = NULL)
+
+
+```
+
+
+```{r}
+
+subinat %>%
+  ggplot(., aes(x = decimalLatitude, y =Buttress))+
+  geom_point(alpha = 0.1)+
+  geom_smooth()
+
+
+```
+
+
+```{r}
+subinat <- subinat %>%
+  mutate(longitude = decimalLongitude,
+         latitude = decimalLatitude)
+
+
+```
+
+
+```{r}
+
+write_csv(subinat, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_point_from_inat.csv')
+
+```
+
+
+```{r}
+
+subinat %>%
+  filter(Buttress == 1)%>%
+  nrow()
+
+
+```
+```{r}
+
+sinat <- subinat%>%
+  filter(decimalLatitude<=-20)
+
+
+```
+
+
+```{r}
+dff <- read.csv('C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_point_from_inat.csv')
+
+dff<- dff %>%
+  filter(life.state>1)
+
+write_csv(dff, 'C:\\Users\\haozh\\Desktop\\buttress_root\\buttress_point_from_inat.csv')
+```
+
+
+```{r}
+library(maps)
+library(tidyverse)
+worlddata <- map_data('world') 
+  ggplot() + 
+  geom_map(data = worlddata, map = worlddata, aes(x = long, y = lat, group = group, map_id = region), fill = '#8d99ae', color = '#8d99ae', size = 0.5)+
+    #coord_sf(crs = 8857, default_crs = 4326)+
+  geom_point(data = dff[dff$life.state > 1,], aes(x = decimalLongitude, y = decimalLatitude, color = as.factor(Buttress)), size = 1)+
+  labs(x = 'Longitude', y = 'Latitude')+
+  theme_classic()+
+  scale_color_viridis_d(direction = -1)+
+  #scale_color_manual(values = c('#3a8c2d'))+
+  theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(),legend.position = NULL)
+
+
+```
+
+```{r}
+
+
+
+```
+
